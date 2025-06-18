@@ -1,9 +1,17 @@
-# check_postgrey
+# check_postgrey.pl
 
-This is a Nagios plugin that checks the status of a postgrey server that has been configured to listen on a unix socket. It connects to a running postgrey server and sends an example postfix policy request, parses the result to make sure there is one and returns the appropriate NAGIOS/NRPE response.
+This is a Nagios plugin that checks the status of a postgrey server that has been configured to listen on a unix or TCP socket. It connects to a running postgrey server and sends an example postfix policy request, parses the result to make sure there is one and returns the appropriate NAGIOS/NRPE response.
 
 ## OPTIONS
-* `--socket` (`-s`) Set the location of the postgrey socket
+            'mode|m=s'      => \$mode,
+            'socket|s=s'    => \$postgrey_socket,
+            'host|H=s'      => \$postgrey_host,
+            'port|p=i'      => \$postgrey_port,
+
+* `--mode` (`-m`) Define the usage mode ([socket]|tcp).
+* `--socket` (`-s`) Set the location of the postgrey socket.
+* `--host` (`-H`) Set the IP address or hostname of the postgrey service.
+* `--port` (`-p`) Set the port of the postgrey service.
 * `--timeout` (`-t`) Sets the timeout, defaults to 10 seconds.
 * `--warning=` (`-w`) Sets the warning period for the response time
 * `--critical=` (`-c`) Sets the critical period for the response time
