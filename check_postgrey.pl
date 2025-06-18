@@ -3,10 +3,12 @@
 ##############################################################################
 # Program to check to make sure postgrey is running and report back to nrpe
 # for nagios. The variable that you need to change is "$postgrey_socket" which
-# is the location of the unix socket interface provided by postgrey
-# Created: 2015-05-10
-# Version: 1.0.2
+# is the location of the unix socket interface provided by postgrey or the
+# TCP socket parameters "$postgrey_host" and "$postgrey_port".
+# Created: 2025-06-18
+# Version: 1.1.0
 # Author: Alex Schuilenburg
+# Contributor: Sascha Nemecek
 ##############################################################################
 
 use English qw( -no_match_vars );
@@ -14,19 +16,26 @@ use Getopt::Long;
 use Pod::Usage;
 use Time::HiRes;
 use IO::Socket::UNIX;
+use IO::Socket::IP;
 use strict;
 use warnings;
 
 my $timeout = 10;
+my $mode = 'socket';
 my $warn = $timeout / 3;
 my $crit = $timeout / 2;
 my $postgrey_socket = '/var/spool/postfix/postgrey/socket';
-my $VERSION = '1.0.2';
+my $postgrey_host = '127.0.0.1';
+my $postgrey_port = '10023';
+my $VERSION = '1.1.0';
 
-Getopt::Long::Configure( 'bundling', 'gnu_compat', );
+Getopt::Long::Configure( 'bundling', 'gnu_compat', 'no_ignore_case' );
 
 GetOptions( 'man'           => sub { pod2usage(-verbose  => 2) },
+            'mode|m=s'      => \$mode,
             'socket|s=s'    => \$postgrey_socket,
+            'host|H=s'      => \$postgrey_host,
+            'port|p=i'      => \$postgrey_port,
             'timeout|t=i'   => \$timeout,
             'warning|w=s'   => \$warn,
             'critical|c=s'  => \$crit,
@@ -35,7 +44,7 @@ GetOptions( 'man'           => sub { pod2usage(-verbose  => 2) },
 );
 
 #Make sure postgrey_socket exists and if not give back a nagios error
-if ( !-e $postgrey_socket ) {
+if ( ($mode eq 'socket') && (!-e $postgrey_socket) ) {
     print "postgrey unix socket $postgrey_socket does not exist.\n";
     exit 2;
 }
@@ -57,10 +66,21 @@ eval {
     alarm $timeout;
 
     # Attempt to connect
-    my $client = IO::Socket::UNIX->new(
-        Type => SOCK_STREAM(),
-        Peer => $postgrey_socket,
-    );
+    my $client;
+    if ($mode eq 'socket') {
+        $client = IO::Socket::UNIX->new(
+            Type => SOCK_STREAM(),
+            Peer => $postgrey_socket,
+        );
+    }
+    if ($mode eq 'tcp') {
+        $client = IO::Socket::IP->new(
+            Type => SOCK_STREAM(),
+            PeerHost => $postgrey_host,
+            PeerPort => $postgrey_port,
+        );
+    }
+
     if (not defined $client) {
         print "Permission denied\n";
         exit 1;
@@ -190,19 +210,22 @@ None
 
 =head1 OPTIONS
 
- --socket    (-s)     Set the location of the postgrey socket
+ --mode      (-m)     The connection mode: 'socket' or 'tcp'.
+ --socket    (-s)     Set the location of the postgrey socket.
+ --host      (-H)     Set the ip or hostname ot the postgrey service.
+ --port      (-p)     Set the port of the postgrey service.
  --timeout   (-t)     Sets the timeout, defaults to 10 seconds.
- --warning=  (-w)     Sets the warning period for the response time
- --critical= (-c)     Sets the critical period for the response time
- --version   (-V)     Display current version and exit
+ --warning=  (-w)     Sets the warning period for the response time.
+ --critical= (-c)     Sets the critical period for the response time.
+ --version   (-V)     Display current version and exit.
  --help      (- exit
 
 
 =head1 DESCRIPTION
 
 This is a Nagios plugin that checks the status of a postgrey server that has been
-configured to listen on a unix socket. It connects to a running postgrey server
-and sends an example  postfix policy request, parses the result toropriate NAGIOS/NRPE response.
+configured to listen on a unix socket or a port. It connects to a running postgrey server
+and sends an example postfix policy request, parses the result toropriate NAGIOS/NRPE response.
 
 =head1 DIAGNOSTICS
 
@@ -223,17 +246,21 @@ check_postgrey must be available on the system being checked.
 check_postgrey depends on the following modules:
     Getopt::Std       Standard Perl 5.8 module
     Time::HiRes       Standard Perl 5.8 module
-    IO::Socket::UNTIONS
+    IO::Socket::UNIX
+    IO::Socket::IP
 
 No known bugs. If you encounter any let me know.
 (alexs@ecoscentric.com)
 
-Currently only unix sockets are supported. This can easily be extended to
-check postgrey servers on TCP sockets - I just wrote what my systems use.
+Currently unix and TCP sockets are supported.
 
 =head1 AUTHOR
 
 Alex Schuilenburg (alexs@ecoscentric.com)
+
+=head1 CONTRIBUTORS
+
+Sascha Nemecek (nemecek@wienfluss.net)
 
 =head1 LICENCE AND COPYRIGHT
 

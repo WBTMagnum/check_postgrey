@@ -1,9 +1,12 @@
-# check_postgrey
+# check_postgrey.pl
 
-This is a Nagios plugin that checks the status of a postgrey server that has been configured to listen on a unix socket. It connects to a running postgrey server and sends an example postfix policy request, parses the result to make sure there is one and returns the appropriate NAGIOS/NRPE response.
+This is a Nagios plugin that checks the status of a postgrey server that has been configured to listen on a unix or TCP socket. It connects to a running postgrey server and sends an example postfix policy request, parses the result to make sure there is one and returns the appropriate NAGIOS/NRPE response.
 
 ## OPTIONS
-* `--socket` (`-s`) Set the location of the postgrey socket
+* `--mode` (`-m`) Define the usage mode ([socket]|tcp).
+* `--socket` (`-s`) Set the location of the postgrey socket.
+* `--host` (`-H`) Set the IP address or hostname of the postgrey service.
+* `--port` (`-p`) Set the port of the postgrey service.
 * `--timeout` (`-t`) Sets the timeout, defaults to 10 seconds.
 * `--warning=` (`-w`) Sets the warning period for the response time
 * `--critical=` (`-c`) Sets the critical period for the response time
@@ -24,14 +27,19 @@ This is a Nagios plugin that checks the status of a postgrey server that has bee
     ```
     Note: If your postgrey unix socket is anywhere other than `/var/spool/postfix/postgrey/socket` you will either need to modify the source or add the `-s` argument to specify where it can be found.
 
-2) Copy `check_postgrey.pl` to where your NAGIOS plugins are installed on the host that will be checked and set appropriate access permissions: e.g. `cp check_postgrey.pl /usr/lib64/nagios/plugins/` or `cp check_postgrey.pl /usr/lib/nagios/plugins/`
+2) Copy `check_postgrey.pl` to where your NAGIOS plugins are installed on the host that will be checked and set appropriate access permissions: e.g.
 
-    and
-    `chmod +x /usr/lib64/nagios/plugins/check_postgrey.pl`
+    ```bash
+    cp check_postgrey.pl /usr/lib64/nagios/plugins/
+    chmod +x /usr/lib64/nagios/plugins/check_postgrey.pl`
+    ```
     or
-    `chmod +x /usr/lib64/nagios/plugins/check_postgrey.pl`
+    ```bash
+    cp check_postgrey.pl /usr/lib/nagios/plugins/
+    chmod +x /usr/lib/nagios/plugins/check_postgrey.pl`
+    ```
 
-3) Add the following (adjust parameters to your own requirements) to each host specification that is to be checked:
+4) Add the following (adjust parameters to your own requirements) to each host specification that is to be checked:
   
     ```
     define service{
