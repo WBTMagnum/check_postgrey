@@ -29,7 +29,7 @@ my $postgrey_host = '127.0.0.1';
 my $postgrey_port = '10023';
 my $VERSION = '1.1.0';
 
-Getopt::Long::Configure( 'bundling', 'gnu_compat', );
+Getopt::Long::Configure( 'bundling', 'gnu_compat', 'no_ignore_case' );
 
 GetOptions( 'man'           => sub { pod2usage(-verbose  => 2) },
             'mode|m=s'      => \$mode,
@@ -44,7 +44,7 @@ GetOptions( 'man'           => sub { pod2usage(-verbose  => 2) },
 );
 
 #Make sure postgrey_socket exists and if not give back a nagios error
-if ( ($mode == 'socket') && (!-e $postgrey_socket) ) {
+if ( ($mode eq 'socket') && (!-e $postgrey_socket) ) {
     print "postgrey unix socket $postgrey_socket does not exist.\n";
     exit 2;
 }
@@ -67,13 +67,13 @@ eval {
 
     # Attempt to connect
     my $client;
-    if ($mode == 'socket') {
+    if ($mode eq 'socket') {
         $client = IO::Socket::UNIX->new(
             Type => SOCK_STREAM(),
             Peer => $postgrey_socket,
         );
     }
-    if ($mode == 'tcp') {
+    if ($mode eq 'tcp') {
         $client = IO::Socket::IP->new(
             Type => SOCK_STREAM(),
             PeerHost => $postgrey_host,
